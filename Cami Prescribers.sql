@@ -28,14 +28,14 @@ ORDER BY  SUM(total_claim_count) DESC;
 --ANSWER: "Family Practice",	9752347 total claims
 
 --b. Which specialty had the most total number of claims for opioids?
-SELECT p.specialty_description, SUM(total_claim_count), drug.opioid_drug_flag
+SELECT p.specialty_description, SUM(total_claim_count)
 FROM prescription
 INNER JOIN prescriber AS p
 ON prescription.npi=p.npi
 INNER JOIN drug
 ON prescription.drug_name = drug.drug_name
 WHERE opioid_drug_flag ='Y'
-GROUP BY p.specialty_description,  drug.opioid_drug_flag
+GROUP BY p.specialty_description
 ORDER BY SUM(total_claim_count) DESC
 --ANSWER: Nurse PRactitioner
 
@@ -93,11 +93,24 @@ ORDER BY  total_cost DESC
 --ANSWER: "opioid"	"$105,080,626.37"
 
 -- QUESTION 5 a. How many CBSAs are in Tennessee? Warning: The cbsa table contains information for all states, not just Tennessee.
-SELECT DISTINCT (cbsaname)
+SELECT DISTINCT (cbsa)
 FROM cbsa
-WHERE cbsaname iLIKE '%TN';
+WHERE cbsaname LIKE '%TN%';
 
---ANSWER:6
+--SELECT *
+--FROM fips_county
+--WHERE state= 'TN'
+
+--SELECT *
+--FROM cbsa
+
+SELECT COUNT(DISTINCT cbsa)
+FROM cbsa
+INNER JOIN fips_county
+USING(fipscounty)
+WHERE state ='TN'
+
+--ANSWER:10
 
 --b. Which cbsa has the largest combined population? Which has the smallest? Report the CBSA name and total population.
 SELECT c.cbsaname, SUM (p.population)
@@ -112,14 +125,23 @@ ORDER BY SUM (p.population) DESC;
 -- and cbsa name:Morristown,TN with smallest population of 116352
 
 --c. What is the largest (in terms of population) county which is not included in a CBSA? Report the county name and population.
- SELECT county,SUM (p.population)
- FROM fips_county
- INNER JOIN  population as p
- USING (fipscounty)
- GROUP BY county
- ORDER BY SUM (p.population) DESC;
 
- -- ANSWER: SHELBY county, with a population of	937847
+SELECT population, fips_county.county
+FROM population
+LEFT JOIN cbsa
+ON population.fipscounty = cbsa.fipscounty
+LEFT JOIN fips_county
+ON population.fipscounty = fips_county.fipscounty
+WHERE cbsa.cbsaname IS NULL
+ORDER BY population DESC;
+ -- ANSWER: SEVIER county, with a population of	95523
+
+ --from sunitha
+ --SELECT fips_county,population,county,state
+--FROM population
+--INNER JOIN fips_county USING (fipscounty)
+--WHERE fipscounty IN (SELECT fipscounty FROM population EXCEPT SELECT DISTINCT fipscounty FROM cbsa)
+--ORDER BY population DESC;
  
 --QUESTION 6 a. Find all rows in the prescription table where total_claims is at least 3000. Report the drug_name and the total_claim_count.
 
